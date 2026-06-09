@@ -92,6 +92,7 @@ class Syntax:
     Program = "Program"
     Property = "Property"
     PropertyDefinition = "PropertyDefinition"
+    FieldDefinition = "FieldDefinition"
     RestElement = "RestElement"
     ReturnStatement = "ReturnStatement"
     SequenceExpression = "SequenceExpression"
@@ -455,7 +456,7 @@ class RegExp(SimpleObj):
     
     def __init__(self, regex_str):
         
-        _match = re.compile("\/(.*?)\/?([^/]*)$").search(regex_str)
+        _match = re.compile(r"\/(.*?)\/?([^/]*)$").search(regex_str)
         _pattern = _match.group(1)
         _flags = _match.group(2)
         self.re_pattern = _pattern
@@ -496,7 +497,7 @@ def generateRegExp(reg):
     
     if reg.source:
         # extract flag from toString result
-        match = re.compile("\/([^/]*)$").search(result)
+        match = re.compile(r"\/([^/]*)$").search(result)
         if not bool(match):
             return result
         
@@ -1971,7 +1972,6 @@ class CodeGeneratorExpression:
         return result
     
     def MethodDefinition(self, expr, precedence, flags):
-
         if expr.static:
             result = ['static' + space]
         else:
@@ -1991,6 +1991,34 @@ class CodeGeneratorExpression:
 
         return join(result, fragment)
     
+    def FieldDefinition(self, expr, precedence, flags):
+        if expr.static:
+            result = ['static' + space]
+        else:
+            result = []
+
+        result.append(
+            self.generatePropertyKey(
+                expr.key,
+                getattr(expr, 'computed', False)
+            )
+        )
+
+        if getattr(expr, 'value', None) is not None:
+            result.extend([
+                space,
+                '=',
+                space,
+                self.generateExpression(
+                    expr.value,
+                    Precedence.Assignment,
+                    E_TTT
+                )
+            ])
+
+        result.append(self.semicolon(flags))
+        return result
+
     def Property(self, expr, precedence, flags):
         if expr.kind == 'get' or expr.kind == 'set':
             return [
@@ -2465,7 +2493,7 @@ class CodeGenerator(CodeGeneratorStatement, CodeGeneratorExpression):
         
         fragment = toSourceNodeWhenNeeded(result, toString=True)
         if stmt.type == Syntax.Program and (not safeConcatenation) and newline == '' and (fragment[len(fragment) - 1] == '\n'):
-            result = toSourceNodeWhenNeeded(result).replaceRight('\s+$', '') if sourceMap else re.compile('\s+$').sub('', fragment)
+            result = toSourceNodeWhenNeeded(result).replaceRight(r'\s+$', '') if sourceMap else re.compile(r'\s+$').sub('', fragment)
         
         return toSourceNodeWhenNeeded(result, stmt)
 
