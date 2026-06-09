@@ -570,67 +570,10 @@ def escapeDisallowedCharacter(code):
     raise Exception('Incorrectly classified character')
 
 def escapeDirective(string):
-    
-    quote = '"' if quotes == 'double' else '\''
-    iz = len(string)
-    i = 0
-    while i < iz:
-        code = ord(string[i])
-        if code == 0x27: # '
-            quote = '"'
-            break
-        elif code == 0x22: # "
-            quote = '\''
-            break
-        elif code == 0x5c: # \
-            i += 1
-        i += 1
-    
-    return quote + string + quote
+    return repr(string)
 
 def escapeString(string):
-    result = ''
-    singleQuotes = 0
-    doubleQuotes = 0
-    
-    for i in range(len(string)):
-        code = ord(string[i])
-        if code == 0x27: # "'"
-            singleQuotes += 1
-        elif code == 0x22: # '"'
-            doubleQuotes += 1
-        elif code == 0x2f and json: # '/'
-            result += '\\'
-        elif esutils.code.isLineTerminator(code) or code == 0x5c: # '\'
-            result += escapeDisallowedCharacter(code)
-            continue
-        elif not esutils.code.isIdentifierPartES5(code) and (
-                json and code < 0x20 or # 'SP'
-                not json and not escapeless and (
-                    code < 0x20 or # 'SP'
-                    code > 0x7e # '~'
-                )):
-            nextChar = ord(string[i + 1]) if i + 1 < len(string) else None
-            result += escapeAllowedCharacter(code, nextChar)
-            continue
-        result += chr(code)
-        
-    single = not (quotes == 'double' or (quotes == 'auto' and doubleQuotes < singleQuotes))
-    quote = '\'' if single else '"'
-    
-    if not (singleQuotes if single else doubleQuotes):
-        return quote + result + quote
-        
-    string = result
-    result = quote
-    
-    for i in range(len(string)):
-        code = ord(string[i])
-        if (code == 0x27 and single) or (code == 0x22 and not single):
-            result += '\\'
-        result += chr(code)
-    
-    return result + quote
+    return repr(string)
 
 """
  * flatten an array to a string, where the array can contain
